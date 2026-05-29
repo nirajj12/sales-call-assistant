@@ -45,7 +45,7 @@ function SummaryCard({ icon: Icon, label, value, hint, tone = "indigo" }) {
       : toneClasses(tone);
 
   return (
-    <div className="rounded-[28px] border border-white/60 bg-white/90 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+    <div className="surface-card interactive-card rounded-[28px] border border-white/60 bg-white/90 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
       <div className="mb-4 flex items-center gap-3">
         <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl ring-1", toneClass)}>
           <Icon className="h-5 w-5" />

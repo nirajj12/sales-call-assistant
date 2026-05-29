@@ -4,6 +4,53 @@
 
 It analyzes a sales conversation and extracts **MEDDIC qualification signals**, **buyer objections**, **deal risks**, **buying signals**, **next actions**, **rep coaching recommendations**, and **evidence-backed transcript quotes** through an async LangGraph workflow.
 
+## Assignment Deliverables
+
+This repository includes the required deliverables:
+
+- GitHub-ready project repository
+- 3 sample transcripts in [transcripts](/Users/nirajmac/Documents/Intellify/transcripts)
+- README coverage for:
+  - MEDDIC extraction prompt design
+  - confidence scoring
+  - objection classification
+  - async job architecture
+
+## LLM Strategy
+
+### Primary LLM Used
+
+The current working local setup uses:
+
+- **Provider:** Groq
+- **Model:** `llama-3.3-70b-versatile`
+
+This is the configuration the app is currently tuned and validated against for local development and demo runs.
+
+Why this choice:
+
+- low-latency structured JSON responses
+- good cost/performance tradeoff for repeated pipeline calls
+- strong fit for parallel MEDDIC and objection extraction in a background workflow
+
+### Alternative Providers Supported
+
+The LLM client also supports these providers:
+
+- OpenAI
+- Gemini
+- Anthropic
+- Mock mode for local development without a real API provider
+
+The provider layer is implemented in [app/services/llm_client.py](/Users/nirajmac/Documents/Intellify/app/services/llm_client.py) and can route requests through provider-specific clients while preserving the same structured extraction interface for the rest of the graph.
+
+Important implementation note:
+
+- provider fallbacks should only be enabled when the configured model name is valid for those fallback providers
+- for example, `llama-3.3-70b-versatile` is a Groq-oriented model name and should not be reused as an OpenAI or Gemini fallback model
+
+For that reason, the recommended local config keeps `LLM_PROVIDER_FALLBACKS` empty unless you explicitly configure compatible alternatives.
+
 ## Demo Overview
 
 Sales managers only review a small percentage of calls manually. Most sales conversations contain important signals about pain, urgency, approval process, objections, and buying intent, but those signals usually stay buried inside transcripts.
@@ -62,6 +109,29 @@ Each MEDDIC element includes:
 - Gap flag if the element is missing or weak
 - Suggested follow-up question for the rep
 
+### MEDDIC Extraction Prompt Design
+
+The MEDDIC extraction step uses a dedicated structured prompt instead of sharing one large prompt with the rest of the workflow.
+
+The prompt is designed to do four things consistently:
+
+- force extraction of the six MEDDIC keys only
+- require quote-grounded evidence for each extracted claim
+- assign confidence based on evidence strength instead of guesswork
+- mark missing elements as gaps rather than inventing answers
+
+At a high level, the prompt instructs the model to:
+
+1. read only the provided transcript
+2. extract `metrics`, `economic_buyer`, `decision_criteria`, `decision_process`, `identify_pain`, and `champion`
+3. return structured JSON for each field
+4. include evidence anchors from the transcript
+5. lower confidence or mark gaps when support is weak
+
+This separation is important because MEDDIC extraction is the most schema-sensitive part of the pipeline, and keeping it isolated improves reliability, validation, and retry handling.
+
+The design goal is not just “extract MEDDIC,” but “extract MEDDIC in a way the rest of the system can trust.” That is why the prompt is paired with schema validation, JSON repair, quote verification, and downstream judge review.
+
 Example:
 
 ```json
@@ -85,6 +155,13 @@ Confidence is based on how clearly the transcript supports the extracted signal.
 
 If a MEDDIC element is missing, the system marks a gap and recommends the next discovery question.
 
+In practice, confidence works like this:
+
+- `high` means the transcript contains a direct, specific answer with strong evidence
+- `medium` means the answer is implied or partially supported
+- `low` means the signal is present but ambiguous or weak
+- `none` means the system should not claim the field was actually discovered
+
 ### Objection Analysis
 
 The workflow detects both explicit and implicit objections.
@@ -106,6 +183,27 @@ Supported objection categories include:
 - Need
 - Authority
 - Security
+
+### How Objections Are Classified
+
+The objection extraction step uses a separate prompt and schema from MEDDIC extraction.
+
+Each objection is classified across three dimensions:
+
+- **category**: what kind of concern the buyer raised
+- **explicitness**: whether the objection was said directly or implied indirectly
+- **handling quality**: whether the rep addressed, deflected, or missed the objection
+
+The category mapping is intentionally practical for sales coaching:
+
+- `price`: budget, ROI, cost, pricing pushback
+- `timing`: delays, competing priorities, implementation timing
+- `competition`: existing vendor, alternative solution, replacement resistance
+- `need`: weak urgency or unclear business pain
+- `authority`: missing access to approvers or decision-makers
+- `security`: compliance, IT review, privacy, procurement risk
+
+This structure makes the objections section useful for both deal inspection and rep coaching.
 
 Example:
 
@@ -336,6 +434,12 @@ That makes the pipeline more reliable because each step has a specific responsib
 - Judge prompt checks support strength and confidence
 - Coaching/deal prompt synthesizes rep feedback and opportunity signals
 
+Prompt files live in:
+
+- [app/prompts/meddic.txt](/Users/nirajmac/Documents/Intellify/app/prompts/meddic.txt)
+- [app/prompts/objection.txt](/Users/nirajmac/Documents/Intellify/app/prompts/objection.txt)
+- [app/prompts/judge.txt](/Users/nirajmac/Documents/Intellify/app/prompts/judge.txt)
+
 Reliability features in the pipeline include:
 
 - Typed graph state
@@ -401,6 +505,8 @@ FRONTEND_DEV_URL=http://localhost:4000
 Notes:
 
 - `5433` is used intentionally to avoid conflicts with a local PostgreSQL install on `5432`.
+- The recommended provider for this project right now is `groq` with `llama-3.3-70b-versatile`.
+- If you switch to OpenAI, Gemini, or Anthropic, also switch `LLM_MODEL` to a model that exists on that provider.
 - If you use a Groq-specific model, keep `LLM_PROVIDER_FALLBACKS` empty unless you also configure provider-compatible model names.
 - Add only the API key for the provider you are actually using.
 

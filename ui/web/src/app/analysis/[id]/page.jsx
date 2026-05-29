@@ -12,6 +12,7 @@ import {
 import AppFooter from "@/components/intellify/AppFooter";
 import WorkflowTimeline from "@/components/intellify/WorkflowTimeline";
 import DashboardSummaryCards from "@/components/intellify/DashboardSummaryCards";
+import OverviewTab from "@/components/intellify/OverviewTab";
 import MEDDICTab from "@/components/intellify/MEDDICTab";
 import ObjectionsTab from "@/components/intellify/ObjectionsTab";
 import DealIntelTab from "@/components/intellify/DealIntelTab";
@@ -19,6 +20,14 @@ import CoachingTab from "@/components/intellify/CoachingTab";
 import TranscriptTab from "@/components/intellify/TranscriptTab";
 
 const TERMINAL = ["completed", "failed", "partial"];
+const REPORT_TABS = [
+  "Overview",
+  "MEDDIC",
+  "Objections",
+  "Coaching",
+  "Deal Intel",
+  "Evidence",
+];
 
 function cn(...values) {
   return values.filter(Boolean).join(" ");
@@ -32,37 +41,11 @@ function statusClasses(status) {
   return "border-slate-200 bg-slate-50 text-slate-600";
 }
 
-function SectionNav() {
-  const items = [
-    ["overview", "Overview"],
-    ["meddic", "MEDDIC"],
-    ["objections", "Objections"],
-    ["coaching", "Coaching"],
-    ["deal-intel", "Deal Intel"],
-    ["evidence", "Evidence"],
-  ];
-
-  return (
-    <div className="sticky top-[72px] z-30 mb-6 overflow-x-auto rounded-[24px] border border-white/60 bg-white/80 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur">
-      <div className="flex gap-2">
-        {items.map(([id, label]) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-          >
-            {label}
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function AnalysisPage({ params }) {
   const jobId = params.id;
   const [analysisId, setAnalysisId] = useState(null);
   const [selectedTurnId, setSelectedTurnId] = useState(null);
+  const [activeTab, setActiveTab] = useState("Overview");
 
   const { data: jobData, isError: jobError } = useQuery({
     queryKey: ["job", jobId],
@@ -104,7 +87,7 @@ export default function AnalysisPage({ params }) {
       <header className="sticky top-0 z-40 border-b border-white/50 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-6 lg:px-8">
           <a href="/" className="flex items-center gap-4 no-underline">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500 text-white shadow-[0_14px_34px_rgba(99,102,241,0.24)]">
+            <div className="brand-orb flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500 text-white shadow-[0_14px_34px_rgba(99,102,241,0.24)]">
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -128,7 +111,7 @@ export default function AnalysisPage({ params }) {
             </span>
             <a
               href="/"
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              className="button-elevated inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-indigo-200 hover:bg-indigo-50/50"
             >
               <ArrowLeft className="h-4 w-4" />
               New analysis
@@ -140,35 +123,33 @@ export default function AnalysisPage({ params }) {
       <main className="mx-auto max-w-7xl px-5 pt-8 sm:px-6 lg:px-8">
         {!isTerminal && (
           <section className="space-y-6">
-            <div className="rounded-[36px] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,255,255,0.76))] p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-700">
+            <div className="surface-card rounded-[32px] border border-white/60 bg-white/90 p-7 shadow-[0_24px_60px_rgba(15,23,42,0.06)]">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-700">
                 <Clock3 className="h-3.5 w-3.5" />
                 {jobStatus === "pending" ? "Queued analysis" : "Analysis running"}
               </div>
-              <h1 className="display-font text-4xl font-bold tracking-[-0.05em] text-slate-950">
+              <h1 className="display-font text-3xl font-bold tracking-[-0.05em] text-slate-950 sm:text-4xl">
                 {jobStatus === "pending"
                   ? "Your transcript has entered the queue."
-                  : "Your SalesSignal AI report is being prepared."}
+                  : "Your analysis report is being prepared."}
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-                The page refreshes automatically while the backend moves through
-                transcript normalization, extraction, evidence verification, judging,
-                coaching, and persistence.
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                This page refreshes automatically while the job completes.
               </p>
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                     Job ID
                   </p>
                   <p className="mt-2 font-mono text-sm text-slate-700">{jobId}</p>
                 </div>
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                     Polling
                   </p>
                   <p className="mt-2 text-sm text-slate-700">Every 3 seconds</p>
                 </div>
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                     Status note
                   </p>
@@ -184,7 +165,7 @@ export default function AnalysisPage({ params }) {
         )}
 
         {isFailed && (
-          <section className="rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
+            <section className="surface-card rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white">
                 <AlertTriangle className="h-6 w-6" />
@@ -210,7 +191,7 @@ export default function AnalysisPage({ params }) {
         )}
 
         {jobError && (
-          <section className="rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
+            <section className="surface-card rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
             <h2 className="display-font text-3xl font-bold tracking-[-0.04em] text-rose-950">
               Could not load job status
             </h2>
@@ -223,7 +204,7 @@ export default function AnalysisPage({ params }) {
         {isTerminal && !isFailed && (
           <section className="space-y-6">
             {(jobStatus === "partial" || analysis?.errors?.length > 0) && (
-              <div className="rounded-[28px] border border-amber-200 bg-amber-50/80 p-5 text-amber-900 shadow-[0_16px_32px_rgba(245,158,11,0.08)]">
+              <div className="surface-card rounded-[28px] border border-amber-200 bg-amber-50/80 p-5 text-amber-900 shadow-[0_16px_32px_rgba(245,158,11,0.08)]">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
                   <div>
@@ -244,9 +225,9 @@ export default function AnalysisPage({ params }) {
 
             <section
               id="overview"
-              className="rounded-[36px] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,255,255,0.76))] p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]"
+              className="surface-card rounded-[32px] border border-white/60 bg-white/90 p-7 shadow-[0_24px_60px_rgba(15,23,42,0.06)]"
             >
-              <div className="mb-5 flex flex-wrap items-center gap-3">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span
                   className={cn(
                     "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
@@ -262,47 +243,59 @@ export default function AnalysisPage({ params }) {
                 )}
               </div>
 
-              <h1 className="display-font text-4xl font-bold tracking-[-0.06em] text-slate-950">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Analysis report
+              </p>
+              <h1 className="display-font text-3xl font-bold tracking-[-0.05em] text-slate-950 sm:text-4xl">
                 {analysis?.source_name || "Sales call analysis"}
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-                Review MEDDIC qualification, buyer objections, coaching signals,
-                forecast indicators, and transcript evidence in one polished report.
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+                Review qualification, objections, coaching, deal signals, and supporting transcript evidence in one place.
               </p>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Created
-                  </p>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {analysis?.created_at
-                      ? new Date(analysis.created_at).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "Unknown"}
-                  </p>
-                </div>
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Job ID
-                  </p>
-                  <p className="mt-2 font-mono text-sm text-slate-700">{jobId}</p>
-                </div>
-                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Analysis ID
-                  </p>
-                  <p className="mt-2 text-sm text-slate-700">{analysis?.id || "Pending"}</p>
-                </div>
+              <div className="mt-6 flex flex-wrap gap-2 text-sm text-slate-500">
+                {analysis?.created_at && (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2">
+                    {new Date(analysis.created_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 font-mono">
+                  {jobId}
+                </span>
+                {analysis?.provider_used && (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 capitalize">
+                    {analysis.provider_used}
+                  </span>
+                )}
               </div>
             </section>
 
             <DashboardSummaryCards analysis={analysis} />
-            <SectionNav />
+
+            <div className="surface-card rounded-[24px] border border-white/60 bg-white/85 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+              <div className="flex gap-2 overflow-x-auto">
+                {REPORT_TABS.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      "tab-chip whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium",
+                      activeTab === tab
+                        ? "bg-slate-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.14)]"
+                        : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {analysisLoading ? (
               <div className="grid gap-4">
@@ -311,33 +304,62 @@ export default function AnalysisPage({ params }) {
                 ))}
               </div>
             ) : (
-              <div className="space-y-6">
-                <MEDDICTab
-                  meddic={analysis?.meddic}
-                  completeness={analysis?.completeness}
-                  judgeResult={analysis?.judge_result}
-                  verifiedEvidence={analysis?.verified_evidence || []}
-                  onSelectTurnId={setSelectedTurnId}
-                />
+              <div className="animate-fadein">
+                {activeTab === "Overview" && (
+                  <OverviewTab
+                    analysis={analysis}
+                    onSelectTurnId={(turnId) => {
+                      setSelectedTurnId(turnId);
+                      setActiveTab("Evidence");
+                    }}
+                  />
+                )}
 
-                <ObjectionsTab
-                  objections={analysis?.objections}
-                  onSelectTurnId={setSelectedTurnId}
-                />
+                {activeTab === "MEDDIC" && (
+                  <MEDDICTab
+                    meddic={analysis?.meddic}
+                    completeness={analysis?.completeness}
+                    judgeResult={analysis?.judge_result}
+                    verifiedEvidence={analysis?.verified_evidence || []}
+                    onSelectTurnId={(turnId) => {
+                      setSelectedTurnId(turnId);
+                      setActiveTab("Evidence");
+                    }}
+                  />
+                )}
 
-                <CoachingTab
-                  coaching={analysis?.coaching}
-                  onSelectTurnId={setSelectedTurnId}
-                />
+                {activeTab === "Objections" && (
+                  <ObjectionsTab
+                    objections={analysis?.objections}
+                    onSelectTurnId={(turnId) => {
+                      setSelectedTurnId(turnId);
+                      setActiveTab("Evidence");
+                    }}
+                  />
+                )}
 
-                <DealIntelTab dealIntelligence={analysis?.deal_intelligence} />
+                {activeTab === "Coaching" && (
+                  <CoachingTab
+                    coaching={analysis?.coaching}
+                    onSelectTurnId={(turnId) => {
+                      setSelectedTurnId(turnId);
+                      setActiveTab("Evidence");
+                    }}
+                  />
+                )}
 
-                <TranscriptTab
-                  transcript={analysis}
-                  verifiedEvidence={analysis?.verified_evidence || []}
-                  selectedTurnId={selectedTurnId}
-                  onSelectTurnId={setSelectedTurnId}
-                />
+                {activeTab === "Deal Intel" && (
+                  <DealIntelTab dealIntelligence={analysis?.deal_intelligence} />
+                )}
+
+                {activeTab === "Evidence" && (
+                  <TranscriptTab
+                    transcript={analysis}
+                    verifiedEvidence={analysis?.verified_evidence || []}
+                    selectedTurnId={selectedTurnId}
+                    onSelectTurnId={setSelectedTurnId}
+                  />
+                )}
               </div>
             )}
           </section>
