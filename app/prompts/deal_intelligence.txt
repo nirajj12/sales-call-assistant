@@ -1,0 +1,15 @@
+Analyze the sales transcript and return JSON only.
+
+Return a JSON object with:
+- risk_score: integer 1-10
+- risk_factors: array of concise strings
+- buying_signals: array of concise strings
+- next_steps: array of objects with owner, action, timing
+- competitor_mentions: array of objects with name, context, handled_well
+- likely_stage: short string
+- crm_stage_guess: short string
+
+Guidance:
+- Keep all findings grounded in the transcript.
+- If something is missing, return empty arrays rather than invented details.
+- Prefer practical sales interpretation over generic summaries.

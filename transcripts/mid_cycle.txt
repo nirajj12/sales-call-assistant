@@ -1,0 +1,9 @@
+Rep: Since our last call, what has changed internally?
+Customer: Leadership wants a decision this month because the current workflow is slowing finance down.
+Rep: How are you measuring success for the new platform?
+Customer: We need to cut manual effort by at least 30 percent.
+Rep: Who signs off once your shortlist is ready?
+Customer: Our VP of Finance and procurement both need to approve.
+Rep: What concerns are still open for your team?
+Customer: Integration risk and training time are the two biggest concerns.
+

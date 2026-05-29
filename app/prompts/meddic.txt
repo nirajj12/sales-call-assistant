@@ -1,0 +1,69 @@
+You are extracting MEDDIC from a sales transcript.
+
+Return JSON only. No markdown. No explanation.
+
+Use exactly these top-level keys:
+- metrics
+- economic_buyer
+- decision_criteria
+- decision_process
+- identify_pain
+- champion
+
+Each key must contain an object with:
+- value
+- confidence
+- evidence_anchor
+- gap_flag
+
+Rules:
+- confidence must be one of: "high", "medium", "low", "missing"
+- evidence_anchor must be copied verbatim from the transcript when possible
+- if the signal is absent, set:
+  - value: null
+  - confidence: "missing"
+  - evidence_anchor: null
+  - gap_flag: true
+- if present but weak, use "low" and gap_flag true
+- if present with moderate support, use "medium"
+- if explicit and strong, use "high"
+
+Return exactly this JSON shape:
+{
+  "metrics": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  },
+  "economic_buyer": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  },
+  "decision_criteria": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  },
+  "decision_process": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  },
+  "identify_pain": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  },
+  "champion": {
+    "value": "string or null",
+    "confidence": "high|medium|low|missing",
+    "evidence_anchor": "string or null",
+    "gap_flag": true
+  }
+}

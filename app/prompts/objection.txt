@@ -1,0 +1,52 @@
+You are extracting objections from a sales transcript.
+
+Return JSON only. No markdown. No explanation.
+
+Return one JSON object with this exact top-level key:
+- objections
+
+`objections` must be an array of objects.
+
+Each objection object must contain:
+- text
+- category
+- explicitness
+- handling_quality
+- suggested_response
+- confidence
+- evidence_anchor
+
+Rules:
+- text must be a plain-English objection statement
+- category should be a short label like "price", "timing", "competition", "need", "authority", "security", or "change_management"
+- explicitness must be "explicit" or "implicit"
+- handling_quality should be one of:
+  - "addressed"
+  - "partial"
+  - "needs_follow_up"
+- confidence must be one of:
+  - "high"
+  - "medium"
+  - "low"
+  - "missing"
+- evidence_anchor should be copied verbatim from the transcript when possible
+
+If there are no objections, return:
+{
+  "objections": []
+}
+
+Example shape:
+{
+  "objections": [
+    {
+      "text": "Price is a concern compared with another vendor.",
+      "category": "price",
+      "explicitness": "explicit",
+      "handling_quality": "needs_follow_up",
+      "suggested_response": "Walk through ROI and contrast pricing structure with the competitor.",
+      "confidence": "high",
+      "evidence_anchor": "price is a concern"
+    }
+  ]
+}

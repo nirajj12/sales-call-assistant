@@ -1,0 +1,11 @@
+Rep: Can you walk me through your current reporting process?
+Customer: We spend around 20 hours every week doing manual reporting.
+Rep: Who is involved when you evaluate a new tool?
+Customer: I shortlist options, but our finance head approves the budget.
+Rep: What matters most when choosing a solution?
+Customer: Fast implementation and ROI within one quarter.
+Rep: Are you happy with your current tool?
+Customer: The price of switching is a concern, and we already use a basic internal system.
+Rep: I understand. I will send a case study by Friday.
+Customer: Great, I will loop in our IT lead next week.
+

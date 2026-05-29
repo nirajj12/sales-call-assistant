@@ -1,0 +1,7 @@
+Rep: What would need to happen for you to move forward this quarter?
+Customer: We would need security sign-off and confidence that rollout will not disrupt quarter-end reporting.
+Rep: If we can satisfy security and rollout planning, are you comfortable involving your CFO?
+Customer: Yes, if you send the implementation plan by Thursday I can share it with her.
+Rep: Is pricing still a blocker?
+Customer: Pricing is manageable, but we need proof that the team will adopt it quickly.
+
