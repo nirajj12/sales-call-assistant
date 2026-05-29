@@ -1,6 +1,6 @@
-# SalesSignal AI — Intellify
+# SalesSignal AI
 
-**SalesSignal AI / Intellify** is an AI-powered sales call intelligence platform that turns speaker-labeled sales transcripts into structured, actionable deal insights.
+**SalesSignal AI** is an AI-powered sales call intelligence platform that turns speaker-labeled sales transcripts into structured, actionable deal insights.
 
 It analyzes a sales conversation and extracts **MEDDIC qualification signals**, **buyer objections**, **deal risks**, **buying signals**, **next actions**, **rep coaching recommendations**, and **evidence-backed transcript quotes** through an async LangGraph workflow.
 
@@ -55,7 +55,7 @@ For that reason, the recommended local config keeps `LLM_PROVIDER_FALLBACKS` emp
 
 Sales managers only review a small percentage of calls manually. Most sales conversations contain important signals about pain, urgency, approval process, objections, and buying intent, but those signals usually stay buried inside transcripts.
 
-Intellify solves this by converting raw call transcripts into structured intelligence that sales teams can use immediately.
+SalesSignal AI solves this by converting raw call transcripts into structured intelligence that sales teams can use immediately.
 
 With one transcript, the system produces:
 
@@ -695,17 +695,10 @@ Planned or natural next extensions include:
 - Account-level deal history
 - Rep leaderboard and coaching trends
 
-## Project Footer
-
-```txt
-© 2026 SalesSignal AI · Intellify
-LangGraph · FastAPI · Celery · Redis · PostgreSQL
-```
-
 ## Author
 
 Built as part of the IntellifyAI Engineering Assessment.
 
 **Project:** Sales Call Intelligence  
-**Product Name:** SalesSignal AI / Intellify  
+**Product Name:** SalesSignal AI  
 **Focus:** LLM use case, structured extraction, async AI orchestration, sales intelligence, and a production-oriented workflow.
