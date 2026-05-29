@@ -1,280 +1,163 @@
-const ROLE = {
-  rep: { bg: "#EFF6FF", border: "#BFDBFE", color: "#1D4ED8", label: "Rep" },
+const ROLE_STYLES = {
+  rep: {
+    badge: "border-indigo-200 bg-indigo-50 text-indigo-700",
+    marker: "bg-indigo-500",
+  },
   customer: {
-    bg: "#F0FDF4",
-    border: "#BBF7D0",
-    color: "#15803D",
-    label: "Customer",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    marker: "bg-emerald-500",
   },
   unknown: {
-    bg: "#F8FAFC",
-    border: "#E2E8F0",
-    color: "#64748B",
-    label: "Unknown",
+    badge: "border-slate-200 bg-slate-50 text-slate-600",
+    marker: "bg-slate-400",
   },
 };
 
-const VERIFY_BADGE = {
-  verified_exact: {
-    bg: "#F0FDF4",
-    border: "#BBF7D0",
-    color: "#15803D",
-    label: "Exact",
-  },
-  verified_fuzzy: {
-    bg: "#EFF6FF",
-    border: "#BFDBFE",
-    color: "#1D4ED8",
-    label: "Fuzzy",
-  },
-  unverified: {
-    bg: "#FEF2F2",
-    border: "#FECACA",
-    color: "#DC2626",
-    label: "Unverified",
-  },
+const EVIDENCE_STYLES = {
+  verified_exact: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  verified_fuzzy: "border-sky-200 bg-sky-50 text-sky-700",
+  unverified: "border-rose-200 bg-rose-50 text-rose-700",
 };
 
-export default function TranscriptTab({ transcript, verifiedEvidence = [] }) {
+function cn(...values) {
+  return values.filter(Boolean).join(" ");
+}
+
+export default function TranscriptTab({
+  transcript,
+  verifiedEvidence = [],
+  selectedTurnId = null,
+  onSelectTurnId,
+}) {
   const turns = transcript?.normalized_turns || transcript?.turns || [];
-  const repWords = transcript?.metrics?.rep_word_count;
-  const custWords = transcript?.metrics?.customer_word_count;
-  const total = (repWords || 0) + (custWords || 0);
+  const repWords = transcript?.metrics?.rep_word_count || 0;
+  const customerWords = transcript?.metrics?.customer_word_count || 0;
+  const totalWords = repWords + customerWords;
 
   if (!turns.length) {
     return (
-      <div
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
-          borderRadius: 12,
-          padding: 48,
-          textAlign: "center",
-        }}
-      >
-        <p
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#0F172A",
-            marginBottom: 4,
-          }}
-        >
-          Transcript unavailable
+      <section className="rounded-[32px] border border-slate-200/70 bg-white/90 p-10 shadow-[0_22px_60px_rgba(15,23,42,0.05)]">
+        <h2 className="display-font text-2xl font-bold tracking-[-0.04em] text-slate-950">
+          Evidence viewer unavailable
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          No normalized transcript turns were found in this analysis.
         </p>
-        <p style={{ fontSize: 13, color: "#94A3B8" }}>
-          No normalized turns were found in this analysis.
-        </p>
-      </div>
+      </section>
     );
   }
 
-  const evMap = {};
-  verifiedEvidence.forEach((ev) => {
-    if (ev.turn_id) {
-      if (!evMap[ev.turn_id]) evMap[ev.turn_id] = [];
-      evMap[ev.turn_id].push(ev);
-    }
+  const evidenceByTurn = {};
+  verifiedEvidence.forEach((item) => {
+    if (!item.turn_id) return;
+    if (!evidenceByTurn[item.turn_id]) evidenceByTurn[item.turn_id] = [];
+    evidenceByTurn[item.turn_id].push(item);
   });
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+    <section id="evidence" className="rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_22px_60px_rgba(15,23,42,0.05)]">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#0F172A",
-              margin: "0 0 4px",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Transcript
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Evidence viewer
+          </p>
+          <h2 className="display-font text-2xl font-bold tracking-[-0.04em] text-slate-950">
+            Transcript and supporting turns
           </h2>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
-            {turns.length} turn{turns.length !== 1 ? "s" : ""} · normalized
-            speaker-labelled conversation.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Click evidence chips in the dashboard to highlight the matching turn
+            here.
           </p>
         </div>
-        {total > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {[
-              { dot: "#2563EB", label: "Rep", val: repWords },
-              { dot: "#22C55E", label: "Customer", val: custWords },
-            ].map(({ dot, label, val }) =>
-              val != null ? (
-                <span
-                  key={label}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 999,
-                    padding: "4px 12px",
-                    fontSize: 12,
-                    color: "#475569",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: dot,
-                      display: "inline-block",
-                    }}
-                  />
-                  {label} · {val}w
-                </span>
-              ) : null,
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600">
+            {turns.length} turns
+          </span>
+          {totalWords > 0 && (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600">
+              {repWords} rep words · {customerWords} customer words
+            </span>
+          )}
+        </div>
       </div>
 
-      {total > 0 && repWords != null && (
-        <div style={{ marginBottom: 18 }}>
-          <div
-            style={{
-              height: 5,
-              background: "#F1F5F9",
-              borderRadius: 999,
-              overflow: "hidden",
-            }}
-          >
+      {totalWords > 0 && (
+        <div className="mb-6 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+          <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+            <span>Conversation balance</span>
+            <span>{Math.round((repWords / totalWords) * 100)}% rep talk share</span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-white">
             <div
-              style={{
-                height: "100%",
-                width: `${Math.round((repWords / total) * 100)}%`,
-                background: "#2563EB",
-                borderRadius: 999,
-              }}
+              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-500"
+              style={{ width: `${Math.round((repWords / totalWords) * 100)}%` }}
             />
           </div>
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {turns.map((turn, i) => {
-          const role = turn.speaker_role || "unknown";
-          const r = ROLE[role] || ROLE.unknown;
-          const evidence = evMap[turn.turn_id] || [];
+      <div className="space-y-3">
+        {turns.map((turn, index) => {
+          const role = ROLE_STYLES[turn.speaker_role] || ROLE_STYLES.unknown;
+          const evidence = evidenceByTurn[turn.turn_id] || [];
+          const isSelected = selectedTurnId && selectedTurnId === turn.turn_id;
+
           return (
-            <div
-              key={turn.turn_id || i}
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: 12,
-                padding: "14px 18px",
-                transition: "border-color 120ms, box-shadow 120ms",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#CBD5E1";
-                e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#E2E8F0";
-                e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.03)";
-              }}
+            <button
+              key={turn.turn_id || index}
+              type="button"
+              onClick={() => onSelectTurnId?.(turn.turn_id)}
+              className={cn(
+                "w-full rounded-[24px] border p-5 text-left transition",
+                isSelected
+                  ? "border-indigo-300 bg-indigo-50/70 shadow-[0_0_0_4px_rgba(99,102,241,0.08)]"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60",
+              )}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span
-                  style={{
-                    background: r.bg,
-                    border: `1px solid ${r.border}`,
-                    color: r.color,
-                    borderRadius: 999,
-                    padding: "2px 8px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                  }}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-semibold capitalize",
+                    role.badge,
+                  )}
                 >
-                  {r.label}
+                  {turn.speaker_role || "unknown"}
                 </span>
-                <span style={{ fontSize: 12, color: "#94A3B8" }}>
-                  {turn.speaker_label}
+                <span className="text-sm text-slate-500">
+                  {turn.speaker_label || "Speaker"}
                 </span>
-                <span style={{ color: "#E2E8F0" }}>·</span>
-                <span style={{ fontSize: 11, color: "#CBD5E1" }}>
-                  {turn.word_count}w
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "#E2E8F0",
-                    marginLeft: "auto",
-                    fontFamily: "ui-monospace, monospace",
-                  }}
-                >
-                  {turn.turn_id}
-                </span>
+                <span className="text-slate-300">•</span>
+                <span className="font-mono text-xs text-slate-400">{turn.turn_id}</span>
+                {turn.word_count != null && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-xs text-slate-400">{turn.word_count} words</span>
+                  </>
+                )}
+                <span className={cn("ml-auto h-2.5 w-2.5 rounded-full", role.marker)} />
               </div>
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "#334155",
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}
-              >
-                {turn.text}
-              </p>
+
+              <p className="text-sm leading-7 text-slate-700">{turn.text}</p>
+
               {evidence.length > 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 6,
-                    marginTop: 10,
-                  }}
-                >
-                  {evidence.map((ev, ei) => {
-                    const vb =
-                      VERIFY_BADGE[ev.status] || VERIFY_BADGE.unverified;
-                    return (
-                      <span
-                        key={ei}
-                        style={{
-                          background: vb.bg,
-                          border: `1px solid ${vb.border}`,
-                          color: vb.color,
-                          borderRadius: 999,
-                          padding: "2px 8px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {ev.source_label} · {vb.label}
-                      </span>
-                    );
-                  })}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {evidence.map((item, evidenceIndex) => (
+                    <span
+                      key={`${turn.turn_id}-${evidenceIndex}`}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-semibold",
+                        EVIDENCE_STYLES[item.status] || EVIDENCE_STYLES.unverified,
+                      )}
+                    >
+                      {item.source_label}
+                    </span>
+                  ))}
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

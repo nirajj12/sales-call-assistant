@@ -1,352 +1,163 @@
-const CAT = {
-  price: { bg: "#FEF2F2", border: "#FECACA", color: "#DC2626", label: "Price" },
-  budget: {
-    bg: "#FFF7ED",
-    border: "#FED7AA",
-    color: "#C2410C",
-    label: "Budget",
-  },
-  competition: {
-    bg: "#EFF6FF",
-    border: "#BFDBFE",
-    color: "#1D4ED8",
-    label: "Competition",
-  },
-  change_management: {
-    bg: "#F5F3FF",
-    border: "#DDD6FE",
-    color: "#6D28D9",
-    label: "Change Mgmt",
-  },
-  security: {
-    bg: "#F0FDF4",
-    border: "#BBF7D0",
-    color: "#15803D",
-    label: "Security",
-  },
-  need: { bg: "#F8FAFC", border: "#E2E8F0", color: "#475569", label: "Need" },
-};
+"use client";
+import { useState } from "react";
+import ConfidencePill from "./ConfidencePill";
 
-const HANDLING = {
-  handled: {
-    dot: "#22C55E",
-    bg: "#F0FDF4",
-    border: "#BBF7D0",
-    color: "#15803D",
-    label: "Handled",
-  },
-  needs_follow_up: {
-    dot: "#F59E0B",
-    bg: "#FFFBEB",
-    border: "#FDE68A",
-    color: "#B45309",
-    label: "Needs follow-up",
-  },
-  not_addressed: {
-    dot: "#EF4444",
-    bg: "#FEF2F2",
-    border: "#FECACA",
-    color: "#DC2626",
-    label: "Not addressed",
-  },
-};
+const FILTERS = ["All", "Pricing", "Security", "Timing", "Authority", "Competitor"];
 
-function ObjectionCard({ objection, index }) {
-  const cat = CAT[objection.category] || {
-    bg: "#F8FAFC",
-    border: "#E2E8F0",
-    color: "#475569",
-    label: objection.category,
-  };
-  const h = HANDLING[objection.handling_quality] || HANDLING.needs_follow_up;
+function cn(...values) {
+  return values.filter(Boolean).join(" ");
+}
 
+function matchesFilter(filter, objection) {
+  const text = `${objection.category || ""} ${objection.text || ""}`.toLowerCase();
+
+  if (filter === "All") return true;
+  if (filter === "Pricing") return ["price", "budget", "pricing"].some((word) => text.includes(word));
+  if (filter === "Security") return text.includes("security");
+  if (filter === "Timing") return ["timing", "timeline", "later", "quarter", "change_management"].some((word) => text.includes(word));
+  if (filter === "Authority") return ["authority", "buyer", "approval", "economic buyer", "sign-off"].some((word) => text.includes(word));
+  if (filter === "Competitor") return ["competition", "competitor", "alternative"].some((word) => text.includes(word));
+  return true;
+}
+
+function handlingClass(handlingQuality) {
+  if (handlingQuality === "handled") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (handlingQuality === "not_addressed") return "border-rose-200 bg-rose-50 text-rose-700";
+  return "border-amber-200 bg-amber-50 text-amber-700";
+}
+
+function categoryClass(category) {
+  const value = (category || "").toLowerCase();
+  if (["price", "budget"].includes(value)) return "border-amber-200 bg-amber-50 text-amber-700";
+  if (value.includes("security")) return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (value.includes("competition")) return "border-indigo-200 bg-indigo-50 text-indigo-700";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function ObjectionCard({ objection, onSelectTurnId }) {
   return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #E2E8F0",
-        borderRadius: 12,
-        padding: "20px 24px",
-        transition: "border-color 150ms, box-shadow 150ms",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "#CBD5E1";
-        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "#E2E8F0";
-        e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.04)";
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
-          marginBottom: 14,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#94A3B8",
-              fontFamily: "ui-monospace, monospace",
-            }}
-          >
-            #{String(index + 1).padStart(2, "0")}
+    <div className="rounded-[28px] border border-slate-200/70 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold capitalize", categoryClass(objection.category))}>
+            {objection.category || "General"}
           </span>
-          <span
-            style={{
-              background: cat.bg,
-              border: `1px solid ${cat.border}`,
-              color: cat.color,
-              borderRadius: 999,
-              padding: "3px 10px",
-              fontSize: 11,
-              fontWeight: 600,
-            }}
-          >
-            {cat.label}
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium capitalize text-slate-600">
+            {objection.explicitness || "implicit"}
           </span>
-          <span
-            style={{
-              background: "#F8FAFC",
-              border: "1px solid #E2E8F0",
-              color: "#64748B",
-              borderRadius: 999,
-              padding: "3px 10px",
-              fontSize: 11,
-            }}
-          >
-            {objection.explicitness === "explicit" ? "Explicit" : "Implicit"}
+          <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold", handlingClass(objection.handling_quality))}>
+            {(objection.handling_quality || "needs_follow_up").replaceAll("_", " ")}
           </span>
         </div>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            background: h.bg,
-            border: `1px solid ${h.border}`,
-            color: h.color,
-            borderRadius: 999,
-            padding: "3px 10px",
-            fontSize: 11,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: "50%",
-              background: h.dot,
-              display: "inline-block",
-            }}
-          />
-          {h.label}
-        </span>
+        <ConfidencePill level={objection.confidence || "medium"} />
       </div>
 
-      <div
-        style={{
-          borderLeft: "3px solid #E2E8F0",
-          paddingLeft: 14,
-          marginBottom: 16,
-          background: "#FAFBFC",
-          padding: "10px 14px",
-          borderRadius: "0 8px 8px 0",
-        }}
-      >
-        <p
-          style={{
-            fontSize: 13,
-            color: "#334155",
-            lineHeight: 1.6,
-            margin: 0,
-            fontStyle: "italic",
-          }}
-        >
-          "{objection.text}"
-        </p>
+      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[22px] border border-slate-100 bg-slate-50/80 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Objection text
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">“{objection.text}”</p>
+        </div>
+
+        <div className="rounded-[22px] border border-slate-100 bg-slate-50/80 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Suggested response
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">
+            {objection.suggested_response || "No response recommendation available."}
+          </p>
+        </div>
       </div>
 
-      {objection.suggested_response && (
-        <div style={{ marginBottom: 12 }}>
-          <p
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "#94A3B8",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              marginBottom: 6,
-            }}
-          >
-            Suggested Response
+      {objection.evidence_anchor && (
+        <button
+          type="button"
+          onClick={() => objection.turn_id && onSelectTurnId?.(objection.turn_id)}
+          className={cn(
+            "mt-4 block w-full rounded-[20px] border border-indigo-100 bg-indigo-50/60 p-4 text-left transition",
+            objection.turn_id && "hover:border-indigo-200 hover:bg-indigo-50",
+          )}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600">
+            Evidence quote
           </p>
-          <p
-            style={{
-              fontSize: 13,
-              color: "#475569",
-              lineHeight: 1.55,
-              margin: 0,
-            }}
-          >
-            {objection.suggested_response}
-          </p>
-        </div>
-      )}
-
-      {objection.turn_id && (
-        <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 10 }}>
-          <span style={{ fontSize: 11, color: "#94A3B8" }}>
-            Turn{" "}
-            <span
-              style={{
-                fontWeight: 600,
-                color: "#64748B",
-                fontFamily: "ui-monospace, monospace",
-              }}
-            >
-              {objection.turn_id}
-            </span>
-          </span>
-        </div>
+          <p className="mt-2 text-sm italic leading-6 text-slate-700">“{objection.evidence_anchor}”</p>
+          {objection.turn_id && (
+            <p className="mt-3 font-mono text-xs text-indigo-600">Jump to {objection.turn_id}</p>
+          )}
+        </button>
       )}
     </div>
   );
 }
 
-export default function ObjectionsTab({ objections = [] }) {
+export default function ObjectionsTab({ objections = [], onSelectTurnId }) {
   const list =
     objections?.objections || (Array.isArray(objections) ? objections : []);
+  const [activeFilter, setActiveFilter] = useState("All");
 
   if (!list.length) {
     return (
-      <div
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
-          borderRadius: 12,
-          padding: 48,
-          textAlign: "center",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-        }}
-      >
-        <div style={{ fontSize: 32, marginBottom: 12 }}>🎉</div>
-        <p
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#0F172A",
-            marginBottom: 4,
-          }}
-        >
-          No objections detected
+      <section id="objections" className="rounded-[32px] border border-slate-200/70 bg-white/90 p-10 shadow-[0_22px_60px_rgba(15,23,42,0.05)]">
+        <h2 className="display-font text-2xl font-bold tracking-[-0.04em] text-slate-950">
+          Objections
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          No objection signals were extracted from this transcript.
         </p>
-        <p style={{ fontSize: 13, color: "#94A3B8" }}>
-          The pipeline found no objection signals in this transcript.
-        </p>
-      </div>
+      </section>
     );
   }
 
-  const handled = list.filter((o) => o.handling_quality === "handled").length;
-  const followUp = list.filter(
-    (o) => o.handling_quality === "needs_follow_up",
-  ).length;
-  const unaddressed = list.filter(
-    (o) => o.handling_quality === "not_addressed",
-  ).length;
+  const filteredList = list.filter((objection) => matchesFilter(activeFilter, objection));
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 24,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+    <section id="objections" className="rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_22px_60px_rgba(15,23,42,0.05)]">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#0F172A",
-              margin: "0 0 4px",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Objections Detected
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Objections
+          </p>
+          <h2 className="display-font text-2xl font-bold tracking-[-0.04em] text-slate-950">
+            Friction points and handling quality
           </h2>
-          <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
-            {list.length} objection{list.length !== 1 ? "s" : ""} extracted and
-            categorized from the call.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Review buyer concerns, how clearly they were stated, and how well they were handled.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {[
-            { count: handled, dot: "#22C55E", label: "handled" },
-            { count: followUp, dot: "#F59E0B", label: "follow-up" },
-            { count: unaddressed, dot: "#EF4444", label: "unaddressed" },
-          ].map(
-            ({ count, dot, label }) =>
-              count > 0 && (
-                <span
-                  key={label}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 999,
-                    padding: "4px 12px",
-                    fontSize: 12,
-                    color: "#475569",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: dot,
-                      display: "inline-block",
-                    }}
-                  />
-                  {count} {label}
-                </span>
-              ),
-          )}
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+          {filteredList.length} of {list.length} objections
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {list.map((obj, i) => (
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        {FILTERS.map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            onClick={() => setActiveFilter(filter)}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition",
+              activeFilter === filter
+                ? "bg-slate-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.14)]"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
+            )}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-4">
+        {filteredList.map((objection) => (
           <ObjectionCard
-            key={obj.objection_id || i}
-            objection={obj}
-            index={i}
+            key={objection.objection_id}
+            objection={objection}
+            onSelectTurnId={onSelectTurnId}
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

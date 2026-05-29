@@ -20,10 +20,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <title>Intellify — Sales Call Intelligence</title>
+        <title>SalesSignal AI</title>
         <meta
           name="description"
-          content="LangGraph-powered MEDDIC analysis for sales teams"
+          content="A clean sales-call intelligence workspace for transcript analysis, MEDDIC scoring, coaching, and deal signals."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,13 +33,41 @@ export default function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
           rel="stylesheet"
         />
         <style>{`
           *, *::before, *::after { box-sizing: border-box; }
-          html { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-          body { background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
+          :root {
+            color-scheme: light;
+            --bg: #f4f6fb;
+            --panel: rgba(255, 255, 255, 0.82);
+            --panel-solid: #ffffff;
+            --line: rgba(148, 163, 184, 0.2);
+            --line-strong: rgba(71, 85, 105, 0.2);
+            --text: #0f172a;
+            --muted: #5b6476;
+            --subtle: #8c98ab;
+            --brand: #4f46e5;
+            --brand-strong: #4338ca;
+            --brand-soft: rgba(79, 70, 229, 0.12);
+            --accent: #7c3aed;
+            --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+          }
+          html { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+          body {
+            background:
+              radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 30%),
+              radial-gradient(circle at top right, rgba(168, 85, 247, 0.12), transparent 26%),
+              radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1), transparent 22%),
+              linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
+            padding: 0;
+          }
+          h1, h2, h3, .display-font { font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif; }
+          a { color: inherit; }
           ::-webkit-scrollbar { width: 5px; height: 5px; }
           ::-webkit-scrollbar-track { background: transparent; }
           ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
@@ -47,6 +75,10 @@ export default function RootLayout({ children }) {
           @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes shimmer { from { background-position: -400px 0; } to { background-position: 400px 0; } }
           @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.16); }
+            50% { box-shadow: 0 0 0 10px rgba(15, 118, 110, 0); }
+          }
           .animate-fadein { animation: fadeIn 0.25s ease both; }
           .skeleton { background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%); background-size: 400px 100%; animation: shimmer 1.4s infinite; }
         `}</style>

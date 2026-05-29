@@ -1,779 +1,350 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Clock3,
+  LoaderCircle,
+  Sparkles,
+} from "lucide-react";
+import AppFooter from "@/components/intellify/AppFooter";
+import WorkflowTimeline from "@/components/intellify/WorkflowTimeline";
+import DashboardSummaryCards from "@/components/intellify/DashboardSummaryCards";
 import MEDDICTab from "@/components/intellify/MEDDICTab";
 import ObjectionsTab from "@/components/intellify/ObjectionsTab";
 import DealIntelTab from "@/components/intellify/DealIntelTab";
 import CoachingTab from "@/components/intellify/CoachingTab";
 import TranscriptTab from "@/components/intellify/TranscriptTab";
-import RawJsonTab from "@/components/intellify/RawJsonTab";
 
 const TERMINAL = ["completed", "failed", "partial"];
-const TABS = [
-  "MEDDIC",
-  "Objections",
-  "Deal Intel",
-  "Coaching",
-  "Transcript",
-  "Raw JSON",
-];
 
-const STEPS = [
-  { label: "Loading transcript", icon: "📄" },
-  { label: "Normalizing speakers", icon: "🎙" },
-  { label: "Extracting MEDDIC", icon: "🔍" },
-  { label: "Extracting objections", icon: "💬" },
-  { label: "Verifying evidence", icon: "✅" },
-  { label: "Judge review", icon: "⚖️" },
-  { label: "Building coaching report", icon: "📊" },
-  { label: "Saving results", icon: "💾" },
-];
-
-function PipelineTracker({ status }) {
-  const [step, setStep] = useState(0);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (status === "running") {
-      ref.current = setInterval(
-        () => setStep((s) => Math.min(s + 1, STEPS.length - 1)),
-        2400,
-      );
-    } else {
-      clearInterval(ref.current);
-      if (status === "completed") setStep(STEPS.length);
-    }
-    return () => clearInterval(ref.current);
-  }, [status]);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {STEPS.map((s, i) => {
-        const done = i < step;
-        const active = i === step && status === "running";
-        return (
-          <div
-            key={i}
-            style={{ display: "flex", alignItems: "center", gap: 12 }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: done ? "#2563EB" : active ? "#EFF6FF" : "#F1F5F9",
-                border: active
-                  ? "2px solid #93C5FD"
-                  : done
-                    ? "none"
-                    : "2px solid #E2E8F0",
-                transition: "all 0.3s ease",
-              }}
-            >
-              {done ? (
-                <svg width="12" height="12" viewBox="0 0 12 12">
-                  <path
-                    d="M2 6l3 3 5-5"
-                    stroke="#fff"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </svg>
-              ) : active ? (
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "#2563EB",
-                    display: "block",
-                    animation: "pulse 1.2s infinite",
-                  }}
-                />
-              ) : (
-                <span style={{ fontSize: 12 }}>{s.icon}</span>
-              )}
-            </div>
-            <span
-              style={{
-                fontSize: 13,
-                color: done ? "#0F172A" : active ? "#2563EB" : "#94A3B8",
-                fontWeight: active ? 600 : done ? 500 : 400,
-                transition: "color 0.2s",
-              }}
-            >
-              {s.label}
-              {active && (
-                <span style={{ marginLeft: 4, color: "#93C5FD" }}>…</span>
-              )}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
+function cn(...values) {
+  return values.filter(Boolean).join(" ");
 }
 
-function StatPill({ label, value }) {
+function statusClasses(status) {
+  if (status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "partial") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (status === "failed") return "border-rose-200 bg-rose-50 text-rose-700";
+  if (status === "running") return "border-indigo-200 bg-indigo-50 text-indigo-700";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function SectionNav() {
+  const items = [
+    ["overview", "Overview"],
+    ["meddic", "MEDDIC"],
+    ["objections", "Objections"],
+    ["coaching", "Coaching"],
+    ["deal-intel", "Deal Intel"],
+    ["evidence", "Evidence"],
+  ];
+
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        background: "#F8FAFC",
-        border: "1px solid #E2E8F0",
-        borderRadius: 999,
-        padding: "4px 12px",
-        fontSize: 12,
-        color: "#475569",
-      }}
-    >
-      <span style={{ color: "#94A3B8", fontSize: 11 }}>{label}</span>
-      <span style={{ fontWeight: 600, color: "#0F172A" }}>{value}</span>
-    </span>
+    <div className="sticky top-[72px] z-30 mb-6 overflow-x-auto rounded-[24px] border border-white/60 bg-white/80 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur">
+      <div className="flex gap-2">
+        {items.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
 export default function AnalysisPage({ params }) {
   const jobId = params.id;
-  const [activeTab, setActiveTab] = useState(0);
   const [analysisId, setAnalysisId] = useState(null);
+  const [selectedTurnId, setSelectedTurnId] = useState(null);
 
   const { data: jobData, isError: jobError } = useQuery({
     queryKey: ["job", jobId],
     queryFn: async () => {
-      const res = await fetch(`/api/proxy/jobs/${jobId}`);
-      if (!res.ok) throw new Error("Job not found");
-      return res.json();
+      const response = await fetch(`/api/proxy/jobs/${jobId}`);
+      if (!response.ok) throw new Error("Job not found");
+      return response.json();
     },
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       return TERMINAL.includes(status) ? false : 3000;
     },
-    enabled: !!jobId,
+    enabled: Boolean(jobId),
   });
 
   useEffect(() => {
-    if (jobData?.analysis_id && !analysisId) setAnalysisId(jobData.analysis_id);
+    if (jobData?.analysis_id && !analysisId) {
+      setAnalysisId(jobData.analysis_id);
+    }
   }, [jobData, analysisId]);
 
   const { data: analysisData, isLoading: analysisLoading } = useQuery({
     queryKey: ["analysis", analysisId],
     queryFn: async () => {
-      const res = await fetch(`/api/proxy/analysis/${analysisId}`);
-      if (!res.ok) throw new Error("Analysis not found");
-      return res.json();
+      const response = await fetch(`/api/proxy/analysis/${analysisId}`);
+      if (!response.ok) throw new Error("Analysis not found");
+      return response.json();
     },
-    enabled: !!analysisId,
+    enabled: Boolean(analysisId),
   });
 
   const jobStatus = jobData?.status || "pending";
   const analysis = analysisData?.data;
   const isTerminal = TERMINAL.includes(jobStatus);
   const isFailed = jobStatus === "failed";
-  const objCount = analysis?.objections?.objections?.length || 0;
-
-  const renderTab = () => {
-    if (!analysis) return null;
-    switch (activeTab) {
-      case 0:
-        return (
-          <MEDDICTab
-            meddic={analysis.meddic}
-            completeness={analysis.completeness}
-            judgeResult={analysis.judge_result}
-            verifiedEvidence={analysis.verified_evidence || []}
-          />
-        );
-      case 1:
-        return <ObjectionsTab objections={analysis.objections} />;
-      case 2:
-        return <DealIntelTab dealIntelligence={analysis.deal_intelligence} />;
-      case 3:
-        return (
-          <CoachingTab
-            coaching={analysis.coaching}
-            metrics={analysis.metrics}
-          />
-        );
-      case 4:
-        return (
-          <TranscriptTab
-            transcript={analysis}
-            verifiedEvidence={analysis.verified_evidence || []}
-          />
-        );
-      case 5:
-        return <RawJsonTab data={analysis} />;
-      default:
-        return null;
-    }
-  };
-
-  const card = {
-    background: "#FFFFFF",
-    border: "1px solid #E2E8F0",
-    borderRadius: 12,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
-      {/* Nav */}
-      <header
-        style={{
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-          padding: "0 24px",
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 960,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: 56,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              minWidth: 0,
-            }}
-          >
-            <a
-              href="/"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                textDecoration: "none",
-                opacity: 1,
-                transition: "opacity 150ms",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = 0.7)}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = 1)}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  background: "#2563EB",
-                  borderRadius: 7,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M7 1L9.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H4.5L7 1Z"
-                    fill="white"
-                  />
-                </svg>
-              </div>
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: "#0F172A",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Intellify
-              </span>
-            </a>
-            <span style={{ color: "#CBD5E1", fontSize: 16, margin: "0 2px" }}>
-              /
-            </span>
-            <span
-              style={{
-                fontSize: 13,
-                color: "#64748B",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: 280,
-              }}
-            >
-              {analysis?.source_name || jobId}
-            </span>
-          </div>
+    <div className="min-h-screen text-slate-900">
+      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-6 lg:px-8">
+          <a href="/" className="flex items-center gap-4 no-underline">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-500 text-white shadow-[0_14px_34px_rgba(99,102,241,0.24)]">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="display-font truncate text-lg font-bold tracking-[-0.04em]">
+                SalesSignal AI
+              </p>
+              <p className="truncate text-sm text-slate-500">
+                {analysis?.source_name || jobId}
+              </p>
+            </div>
+          </a>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexShrink: 0,
-            }}
-          >
-            {analysis?.provider_used && (
-              <span
-                style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: 999,
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  color: "#64748B",
-                  textTransform: "capitalize",
-                }}
-              >
-                via {analysis.provider_used}
-              </span>
-            )}
-            {analysis?.created_at && (
-              <span style={{ fontSize: 12, color: "#94A3B8" }}>
-                {new Date(analysis.created_at).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
+                statusClasses(jobStatus),
+              )}
+            >
+              {jobStatus}
+            </span>
             <a
               href="/"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: 7,
-                padding: "6px 12px",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "#475569",
-                textDecoration: "none",
-                transition: "all 120ms",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#F8FAFC";
-                e.currentTarget.style.borderColor = "#CBD5E1";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#FFFFFF";
-                e.currentTarget.style.borderColor = "#E2E8F0";
-              }}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
-              ← New analysis
+              <ArrowLeft className="h-4 w-4" />
+              New analysis
             </a>
           </div>
         </div>
       </header>
 
-      <main
-        style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 80px" }}
-      >
-        {/* Loading state */}
+      <main className="mx-auto max-w-7xl px-5 pt-8 sm:px-6 lg:px-8">
         {!isTerminal && (
-          <div
-            style={{ ...card, padding: 32, marginBottom: 24 }}
-            className="animate-fadein"
-          >
-            <div style={{ display: "flex", gap: 40, alignItems: "flex-start" }}>
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    marginBottom: 16,
-                  }}
+          <section className="space-y-6">
+            <div className="rounded-[36px] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,255,255,0.76))] p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-700">
+                <Clock3 className="h-3.5 w-3.5" />
+                {jobStatus === "pending" ? "Queued analysis" : "Analysis running"}
+              </div>
+              <h1 className="display-font text-4xl font-bold tracking-[-0.05em] text-slate-950">
+                {jobStatus === "pending"
+                  ? "Your transcript has entered the queue."
+                  : "Your SalesSignal AI report is being prepared."}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
+                The page refreshes automatically while the backend moves through
+                transcript normalization, extraction, evidence verification, judging,
+                coaching, and persistence.
+              </p>
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Job ID
+                  </p>
+                  <p className="mt-2 font-mono text-sm text-slate-700">{jobId}</p>
+                </div>
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Polling
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">Every 3 seconds</p>
+                </div>
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Status note
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {jobData?.message || "Waiting for the next backend update."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <WorkflowTimeline status={jobStatus} />
+          </section>
+        )}
+
+        {isFailed && (
+          <section className="rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="display-font text-3xl font-bold tracking-[-0.04em] text-rose-950">
+                  Analysis failed
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-rose-700">
+                  {jobData?.message ||
+                    "The backend pipeline encountered an unrecoverable error before the report could be saved."}
+                </p>
+                <a
+                  href="/"
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-rose-800"
                 >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      background:
-                        jobStatus === "running" ? "#EFF6FF" : "#F8FAFC",
-                      border: `1px solid ${jobStatus === "running" ? "#BFDBFE" : "#E2E8F0"}`,
-                      borderRadius: 999,
-                      padding: "4px 12px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        background:
-                          jobStatus === "running" ? "#3B82F6" : "#CBD5E1",
-                        display: "inline-block",
-                        animation:
-                          jobStatus === "running"
-                            ? "pulse 1.5s infinite"
-                            : "none",
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: jobStatus === "running" ? "#2563EB" : "#64748B",
-                      }}
-                    >
-                      {jobStatus === "running" ? "Running analysis" : "Queued"}
-                    </span>
+                  Try another transcript
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {jobError && (
+          <section className="rounded-[36px] border border-rose-200 bg-rose-50/80 p-8 shadow-[0_24px_60px_rgba(244,63,94,0.08)]">
+            <h2 className="display-font text-3xl font-bold tracking-[-0.04em] text-rose-950">
+              Could not load job status
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-rose-700">
+              Make sure the backend is running and the proxy routes are configured correctly.
+            </p>
+          </section>
+        )}
+
+        {isTerminal && !isFailed && (
+          <section className="space-y-6">
+            {(jobStatus === "partial" || analysis?.errors?.length > 0) && (
+              <div className="rounded-[28px] border border-amber-200 bg-amber-50/80 p-5 text-amber-900 shadow-[0_16px_32px_rgba(245,158,11,0.08)]">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-semibold">Partial analysis</p>
+                    <p className="mt-1 text-sm leading-6 text-amber-800">
+                      Some backend steps returned errors. Results are still available,
+                      but parts of the report may be incomplete.
+                    </p>
+                    {analysis?.errors?.map((error, index) => (
+                      <p key={index} className="mt-2 text-sm text-amber-800">
+                        • {error}
+                      </p>
+                    ))}
                   </div>
                 </div>
-                <h2
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "#0F172A",
-                    letterSpacing: "-0.02em",
-                    marginBottom: 6,
-                  }}
-                >
-                  {jobStatus === "pending"
-                    ? "Your transcript is in the queue"
-                    : "Processing your transcript"}
-                </h2>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "#64748B",
-                    marginBottom: 28,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {jobStatus === "pending"
-                    ? "The Celery worker will pick this up shortly. This page refreshes every 3 seconds."
-                    : "The LangGraph pipeline is running. MEDDIC, objections, and deal intel are being extracted in parallel."}
-                </p>
-                <PipelineTracker status={jobStatus} />
               </div>
-              <div
-                style={{
-                  flexShrink: 0,
-                  textAlign: "right",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                }}
-              >
+            )}
+
+            <section
+              id="overview"
+              className="rounded-[36px] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,255,255,0.76))] p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]"
+            >
+              <div className="mb-5 flex flex-wrap items-center gap-3">
                 <span
-                  style={{
-                    fontSize: 11,
-                    color: "#94A3B8",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
+                  className={cn(
+                    "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
+                    statusClasses(analysis?.status || jobStatus),
+                  )}
                 >
-                  Job ID
+                  {analysis?.status || jobStatus}
                 </span>
-                <code
-                  style={{
-                    fontSize: 11,
-                    color: "#475569",
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 6,
-                    padding: "4px 8px",
-                  }}
-                >
-                  {jobId}
-                </code>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Failed state */}
-        {isFailed && (
-          <div
-            style={{
-              background: "#FEF2F2",
-              border: "1px solid #FECACA",
-              borderRadius: 12,
-              padding: 32,
-            }}
-            className="animate-fadein"
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#EF4444",
-                  display: "inline-block",
-                }}
-              />
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#991B1B" }}>
-                Analysis failed
-              </span>
-            </div>
-            <p style={{ fontSize: 13, color: "#DC2626", marginBottom: 12 }}>
-              {jobData?.message ||
-                "The pipeline encountered an unrecoverable error."}
-            </p>
-            <a
-              href="/"
-              style={{
-                fontSize: 13,
-                color: "#2563EB",
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
-              ← Try again with a new transcript
-            </a>
-          </div>
-        )}
-
-        {/* Job not found */}
-        {jobError && (
-          <div
-            style={{
-              background: "#FEF2F2",
-              border: "1px solid #FECACA",
-              borderRadius: 12,
-              padding: 40,
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: "#991B1B",
-                marginBottom: 6,
-              }}
-            >
-              Could not load job status
-            </p>
-            <p style={{ fontSize: 13, color: "#DC2626", marginBottom: 16 }}>
-              Make sure your FastAPI backend is running at the configured URL.
-            </p>
-            <a
-              href="/"
-              style={{
-                fontSize: 13,
-                color: "#2563EB",
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
-              ← Go home
-            </a>
-          </div>
-        )}
-
-        {/* Results */}
-        {isTerminal && !isFailed && (
-          <div className="animate-fadein">
-            {/* Partial warning */}
-            {(jobStatus === "partial" || analysis?.errors?.length > 0) && (
-              <div
-                style={{
-                  background: "#FFFBEB",
-                  border: "1px solid #FDE68A",
-                  borderRadius: 10,
-                  padding: "12px 16px",
-                  marginBottom: 20,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 4,
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>⚠️</span>
-                  <span
-                    style={{ fontSize: 13, fontWeight: 600, color: "#92400E" }}
-                  >
-                    Partial analysis
+                {analysis?.provider_used && (
+                  <span className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm capitalize text-slate-600">
+                    Provider: {analysis.provider_used}
                   </span>
-                </div>
-                <p style={{ fontSize: 12, color: "#A16207", marginBottom: 4 }}>
-                  Some pipeline nodes encountered errors. Displayed results may
-                  be incomplete.
-                </p>
-                {analysis?.errors?.map((err, i) => (
-                  <p key={i} style={{ fontSize: 12, color: "#CA8A04" }}>
-                    · {err}
+                )}
+              </div>
+
+              <h1 className="display-font text-4xl font-bold tracking-[-0.06em] text-slate-950">
+                {analysis?.source_name || "Sales call analysis"}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
+                Review MEDDIC qualification, buyer objections, coaching signals,
+                forecast indicators, and transcript evidence in one polished report.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Created
                   </p>
-                ))}
+                  <p className="mt-2 text-sm text-slate-700">
+                    {analysis?.created_at
+                      ? new Date(analysis.created_at).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Unknown"}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Job ID
+                  </p>
+                  <p className="mt-2 font-mono text-sm text-slate-700">{jobId}</p>
+                </div>
+                <div className="rounded-[24px] border border-slate-200 bg-white/80 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Analysis ID
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">{analysis?.id || "Pending"}</p>
+                </div>
               </div>
-            )}
+            </section>
 
-            {/* Header stats */}
-            {analysis && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 24,
-                }}
-              >
-                <h1
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: "#0F172A",
-                    letterSpacing: "-0.03em",
-                    marginRight: 4,
-                  }}
-                >
-                  {analysis.source_name || "Transcript Analysis"}
-                </h1>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    background: "#F0FDF4",
-                    border: "1px solid #BBF7D0",
-                    color: "#15803D",
-                    borderRadius: 999,
-                    padding: "3px 10px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: "50%",
-                      background: "#22C55E",
-                      display: "inline-block",
-                    }}
-                  />
-                  {analysis.status}
-                </span>
-                {analysis.completeness?.score != null && (
-                  <StatPill
-                    label="MEDDIC"
-                    value={`${Math.round(analysis.completeness.score)}%`}
-                  />
-                )}
-                {analysis.metrics?.rep_talk_ratio != null && (
-                  <StatPill
-                    label="Rep talk"
-                    value={`${Math.round(analysis.metrics.rep_talk_ratio * 100)}%`}
-                  />
-                )}
-                {analysis.metrics?.total_questions != null && (
-                  <StatPill
-                    label="Questions"
-                    value={analysis.metrics.total_questions}
-                  />
-                )}
-                {analysis.deal_intelligence?.risk_score != null && (
-                  <StatPill
-                    label="Risk"
-                    value={`${analysis.deal_intelligence.risk_score}/10`}
-                  />
-                )}
-              </div>
-            )}
+            <DashboardSummaryCards analysis={analysis} />
+            <SectionNav />
 
-            {/* Tabs */}
-            <div
-              style={{ borderBottom: "1px solid #E2E8F0", marginBottom: 24 }}
-            >
-              <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
-                {TABS.map((tab, i) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(i)}
-                    style={{
-                      padding: "12px 18px",
-                      fontSize: 13,
-                      whiteSpace: "nowrap",
-                      fontWeight: activeTab === i ? 600 : 400,
-                      color: activeTab === i ? "#0F172A" : "#64748B",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      borderBottom:
-                        activeTab === i
-                          ? "2px solid #2563EB"
-                          : "2px solid transparent",
-                      marginBottom: -1,
-                      transition: "all 120ms",
-                      fontFamily: "inherit",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    {tab}
-                    {tab === "Objections" && objCount > 0 && (
-                      <span
-                        style={{
-                          background: "#F1F5F9",
-                          color: "#64748B",
-                          borderRadius: 999,
-                          padding: "1px 6px",
-                          fontSize: 10,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {objCount}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tab content */}
             {analysisLoading ? (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                {[200, 140, 180].map((h, i) => (
-                  <div
-                    key={i}
-                    className="skeleton"
-                    style={{ height: h, borderRadius: 10 }}
-                  />
+              <div className="grid gap-4">
+                {[0, 1, 2, 3].map((item) => (
+                  <div key={item} className="skeleton h-52 rounded-[28px]" />
                 ))}
               </div>
             ) : (
-              <div key={activeTab} className="animate-fadein">
-                {renderTab()}
+              <div className="space-y-6">
+                <MEDDICTab
+                  meddic={analysis?.meddic}
+                  completeness={analysis?.completeness}
+                  judgeResult={analysis?.judge_result}
+                  verifiedEvidence={analysis?.verified_evidence || []}
+                  onSelectTurnId={setSelectedTurnId}
+                />
+
+                <ObjectionsTab
+                  objections={analysis?.objections}
+                  onSelectTurnId={setSelectedTurnId}
+                />
+
+                <CoachingTab
+                  coaching={analysis?.coaching}
+                  onSelectTurnId={setSelectedTurnId}
+                />
+
+                <DealIntelTab dealIntelligence={analysis?.deal_intelligence} />
+
+                <TranscriptTab
+                  transcript={analysis}
+                  verifiedEvidence={analysis?.verified_evidence || []}
+                  selectedTurnId={selectedTurnId}
+                  onSelectTurnId={setSelectedTurnId}
+                />
               </div>
             )}
-          </div>
+          </section>
         )}
       </main>
 
-      <style jsx global>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-      `}</style>
+      <AppFooter />
     </div>
   );
 }
