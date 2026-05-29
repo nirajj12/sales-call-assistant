@@ -253,6 +253,10 @@ The rep asked good pain-discovery questions, but did not confirm the decision pr
 
 The project uses an async AI pipeline so long-running LLM analysis does not block the API request.
 
+![SalesSignal AI architecture](docs/images/architecture.png)
+
+Architecture overview of the full SalesSignal AI flow, from transcript input through FastAPI, Celery, LangGraph orchestration, PostgreSQL persistence, and the final analysis dashboard.
+
 ```txt
 Frontend UI
    |
@@ -391,6 +395,10 @@ This design avoids HTTP timeouts and gives the UI a cleaner progress experience.
 ## UI Pages
 
 ### Home Page
+
+![SalesSignal AI UI](docs/images/ui.png)
+
+Home page UI showing the transcript analysis entry experience, primary call-to-action, recent run summary, and the dashboard-first product presentation.
 
 The landing page introduces the product and its main capabilities:
 
